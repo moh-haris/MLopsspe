@@ -68,7 +68,7 @@ spec:
       containers:
       - name: backend
         # UPDATED: Matches your ctr output exactly
-        image: project_backend:latest
+        image: mlops-backend:latest
         imagePullPolicy: Never
         ports:
         - containerPort: 8000
@@ -122,7 +122,7 @@ spec:
       containers:
       - name: frontend
         # UPDATED: Matches your ctr output exactly
-        image: project_frontend:latest
+        image: mlops-frontend:latest
         imagePullPolicy: Never
         ports:
         - containerPort: 8501
