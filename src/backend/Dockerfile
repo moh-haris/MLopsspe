@@ -10,8 +10,9 @@ RUN apt-get update && apt-get install -y sqlite3 build-essential && rm -rf /var/
 # This prevents downloading 2GB+ of unused NVIDIA CUDA binaries.
 RUN pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
 
-# Install the rest of the ML, API dependencies, AND hvac for Vault
-RUN pip install fastapi uvicorn gliner sentence-transformers chromadb groq hvac
+# Install the rest of the ML, API dependencies, hvac for Vault,
+# AND python-json-logger for structured ELK-compatible JSON logging
+RUN pip install fastapi uvicorn gliner sentence-transformers chromadb groq hvac python-json-logger
 
 # Copy your backend code into the container
 COPY . /app/
@@ -23,5 +24,5 @@ RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTr
 # Expose the FastAPI port
 EXPOSE 8000
 
-# Start the API
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Start the API with structured JSON log config for Uvicorn
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--log-config", "/app/uvicorn_log_config.json"]
