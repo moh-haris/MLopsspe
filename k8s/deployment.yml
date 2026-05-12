@@ -2,6 +2,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: securenoc-data-pvc
+  namespace: securenoc
 spec:
   accessModes:
     - ReadWriteOnce
@@ -14,6 +15,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: vault
+  namespace: securenoc
 spec:
   replicas: 1
   selector:
@@ -42,6 +44,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: vault-service
+  namespace: securenoc
 spec:
   selector:
     app: vault
@@ -55,6 +58,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: backend
+  namespace: securenoc
 spec:
   replicas: 1
   selector:
@@ -68,8 +72,8 @@ spec:
       containers:
       - name: backend
         # UPDATED: Matches your ctr output exactly
-        image: mlops-backend:latest
-        imagePullPolicy: Never
+        image: mdharis285046/mlops-backend:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 8000
         env:
@@ -96,6 +100,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: backend-service
+  namespace: securenoc
 spec:
   selector:
     app: backend
@@ -109,6 +114,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: frontend
+  namespace: securenoc
 spec:
   replicas: 1
   selector:
@@ -122,8 +128,8 @@ spec:
       containers:
       - name: frontend
         # UPDATED: Matches your ctr output exactly
-        image: mlops-frontend:latest
-        imagePullPolicy: Never
+        image: mdharis285046/mlops-frontend:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 8501
         env:
@@ -134,6 +140,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: frontend-service
+  namespace: securenoc
 spec:
   type: LoadBalancer
   selector:

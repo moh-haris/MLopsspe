@@ -17,7 +17,7 @@ pipeline {
         stage('Build Docker Images') {
             steps {
                 echo "🔨 Building Backend Docker Image..."
-                sh "docker build -t ${DOCKER_IMAGE_BACKEND}:latest ./src/backend"
+                sh "docker build -t ${DOCKER_IMAGE_BACKEND}:latest -f src/backend/Dockerfile ."
                 
                 echo "🎨 Building Frontend Docker Image..."
                 sh "docker build -t ${DOCKER_IMAGE_FRONTEND}:latest ./src/frontend"
@@ -70,12 +70,15 @@ pipeline {
                 sh '''
                     export KUBECONFIG=./jenkins-kubeconfig
                     
+                    # Create namespaces first (must exist before namespaced resources)
+                    ./kubectl apply -f k8s/namespaces.yml --insecure-skip-tls-verify=true
+                    
                     # Apply all YAML files in the k8s directory
                     ./kubectl apply -f k8s/ --insecure-skip-tls-verify=true
                     
                     # Force Kubernetes to pull the new images and restart the pods
-                    ./kubectl rollout restart deployment backend --insecure-skip-tls-verify=true
-                    ./kubectl rollout restart deployment frontend --insecure-skip-tls-verify=true
+                    ./kubectl rollout restart deployment backend -n securenoc --insecure-skip-tls-verify=true
+                    ./kubectl rollout restart deployment frontend -n securenoc --insecure-skip-tls-verify=true
                 '''
             }
         }
