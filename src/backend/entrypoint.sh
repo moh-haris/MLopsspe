@@ -8,6 +8,7 @@ echo "========================================="
 # Step 1: Copy seed dataset into PVC mount if not already present
 if [ ! -f /app/data/telecom_sops_500_stress_test.json ]; then
     echo "📂 Seeding dataset from baked image into PVC volume..."
+    mkdir -p /app/data/
     cp /app/seed-data/telecom_sops_500_stress_test.json /app/data/
     echo "✅ Dataset seeded successfully."
 else
