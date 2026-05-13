@@ -113,7 +113,7 @@ CHROMA_PATH = os.path.join(DATA_DIR, "chroma_db")
 logger.info("Connecting to HashiCorp Vault", extra={"vault_addr": os.getenv("VAULT_ADDR", "http://vault:8200")})
 try:
     vault_client = hvac.Client(
-        url=os.getenv("VAULT_ADDR", "http://vault:8200"),
+        url=os.getenv("VAULT_ADDR", "http://vault-service:8200"),
         token=os.getenv("VAULT_TOKEN"),
     )
     # Read the secret injected into Vault

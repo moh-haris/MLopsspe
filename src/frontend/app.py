@@ -3,7 +3,7 @@ import requests
 import os
 
 # Get backend URL from the docker-compose environment
-BACKEND_URL = os.getenv("BACKEND_URL", "http://backend:8000")
+BACKEND_URL = os.getenv("BACKEND_URL", "http://backend-service:8000")
 
 st.set_page_config(page_title="SecureNOC Assistant", page_icon="📡")
 st.title("📡 SecureNOC: Telecom SOP Assistant")
