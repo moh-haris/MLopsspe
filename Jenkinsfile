@@ -3,8 +3,8 @@ pipeline {
     
     environment {
         // Change "sameer123" to your actual lowercase Docker Hub username!
-        DOCKER_IMAGE_BACKEND = "tsameer/securenoc-backend"
-        DOCKER_IMAGE_FRONTEND = "tsameer/securenoc-frontend"
+        DOCKER_IMAGE_BACKEND = "mdharis285046/mlops-backend"
+        DOCKER_IMAGE_FRONTEND = "mdharis285046/mlops-frontend"
     }
 
     stages {
@@ -21,6 +21,8 @@ pipeline {
                 
                 echo "🎨 Building Frontend Docker Image..."
                 sh "docker build -t ${DOCKER_IMAGE_FRONTEND}:latest ./src/frontend"
+
+
             }
         }
         
@@ -47,6 +49,13 @@ pipeline {
                     
                     echo "Pushing Frontend..."
                     sh "docker push ${DOCKER_IMAGE_FRONTEND}:latest"
+
+                    sh "docker tag ${DOCKER_IMAGE_BACKEND}:latest ${DOCKER_IMAGE_BACKEND}:${env.BUILD_NUMBER}"
+                    sh "docker push ${DOCKER_IMAGE_BACKEND}:${env.BUILD_NUMBER}"
+
+                    sh "docker tag ${DOCKER_IMAGE_FRONTEND}:latest ${DOCKER_IMAGE_FRONTEND}:${env.BUILD_NUMBER}"
+                    sh "docker push ${DOCKER_IMAGE_FRONTEND}:${env.BUILD_NUMBER}"
+
                 }
             }
         }
@@ -61,7 +70,7 @@ pipeline {
                 
                 echo "🔌 Patching Kubeconfig for Docker-to-Host networking..."
                 sh '''
-                    cp /root/.kube/config ./jenkins-kubeconfig
+                    cp /home/haris/.kube/config ./jenkins-kubeconfig
                     sed -i 's/0.0.0.0/172.17.0.1/g' ./jenkins-kubeconfig
                     sed -i 's/127.0.0.1/172.17.0.1/g' ./jenkins-kubeconfig
                 '''

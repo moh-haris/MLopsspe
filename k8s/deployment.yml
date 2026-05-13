@@ -73,7 +73,7 @@ spec:
       - name: backend
         # UPDATED: Matches your ctr output exactly
         image: mdharis285046/mlops-backend:latest
-        imagePullPolicy: Never
+        imagePullPolicy: Always
         ports:
         - containerPort: 8000
         env:
@@ -129,7 +129,7 @@ spec:
       - name: frontend
         # UPDATED: Matches your ctr output exactly
         image: mdharis285046/mlops-frontend:latest
-        imagePullPolicy: Never
+        imagePullPolicy: Always
         ports:
         - containerPort: 8501
         env:

@@ -4,7 +4,7 @@ WORKDIR /app
 
 RUN pip install --no-cache-dir streamlit requests
 
-COPY src/frontend/ /app/
+COPY . /app/
 
 EXPOSE 8501
 
