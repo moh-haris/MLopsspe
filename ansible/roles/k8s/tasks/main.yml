@@ -1,0 +1,46 @@
+---
+# Role: k8s — Kubernetes deployment, rollout, and verification
+
+- name: Check if kubectl is available
+  command: which kubectl
+  register: kubectl_check
+  ignore_errors: true
+  changed_when: false
+
+- name: Download kubectl if not present
+  shell: |
+    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+    chmod +x ./kubectl
+    mv ./kubectl /usr/local/bin/kubectl
+  when: kubectl_check.rc != 0
+
+- name: Create Kubernetes namespaces
+  shell: kubectl apply -f {{ k8s_dir }}/namespaces.yml {{ insecure_flag }}
+
+- name: Apply Kubernetes secrets
+  shell: kubectl apply -f {{ k8s_dir }}/secrets.yml {{ insecure_flag }}
+
+- name: Apply all Kubernetes manifests
+  shell: kubectl apply -f {{ k8s_dir }}/ {{ insecure_flag }}
+
+- name: Rollout restart backend deployment
+  shell: kubectl rollout restart deployment backend -n {{ app_namespace }} {{ insecure_flag }}
+
+- name: Rollout restart frontend deployment
+  shell: kubectl rollout restart deployment frontend -n {{ app_namespace }} {{ insecure_flag }}
+
+- name: Wait for backend rollout to complete
+  shell: kubectl rollout status deployment/backend -n {{ app_namespace }} --timeout={{ rollout_timeout }} {{ insecure_flag }}
+  register: backend_rollout
+
+- name: Display backend rollout status
+  debug:
+    var: backend_rollout.stdout_lines
+
+- name: Wait for frontend rollout to complete
+  shell: kubectl rollout status deployment/frontend -n {{ app_namespace }} --timeout={{ rollout_timeout }} {{ insecure_flag }}
+  register: frontend_rollout
+
+- name: Display frontend rollout status
+  debug:
+    var: frontend_rollout.stdout_lines

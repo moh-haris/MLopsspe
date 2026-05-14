@@ -33,7 +33,10 @@ spec:
         - containerPort: 8200
         env:
         - name: VAULT_DEV_ROOT_TOKEN_ID
-          value: "securenoc-root-token"
+          valueFrom:
+            secretKeyRef:
+              name: vault-credentials
+              key: vault-token
         - name: VAULT_DEV_LISTEN_ADDRESS
           value: "0.0.0.0:8200"
         securityContext:
@@ -80,7 +83,15 @@ spec:
         - name: VAULT_ADDR
           value: "http://vault-service:8200"
         - name: VAULT_TOKEN
-          value: "securenoc-root-token"
+          valueFrom:
+            secretKeyRef:
+              name: vault-credentials
+              key: vault-token
+        - name: HF_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: app-credentials
+              key: hf-token
         volumeMounts:
         - mountPath: "/app/data"
           name: data-volume

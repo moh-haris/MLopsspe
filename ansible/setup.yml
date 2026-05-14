@@ -1,27 +1,12 @@
 ---
+# SecureNOC — Host Provisioning Only
+# Usage: ansible-playbook setup.yml
+# This playbook only runs the setup role (swap, Docker, user groups).
+# For full deployment, use site.yml or deploy.yml.
+
 - name: SecureNOC Host Provisioning
   hosts: localhost
   connection: local
   become: yes
-  tasks:
-    - name: Ensure Swap Space is active (8GB RAM Survival)
-      command: swapon --show
-      register: swap_status
-      changed_when: false
-
-    - name: Fail if swap is not configured
-      fail:
-        msg: "CRITICAL: 16GB Swap space is missing. System will crash during build."
-      when: "'/swapfile' not in swap_status.stdout"
-
-    - name: Ensure Docker is installed
-      apt:
-        name: docker.io
-        state: present
-        update_cache: yes
-
-    - name: Ensure user is in docker group
-      user:
-        name: "{{ ansible_user_id }}"
-        groups: docker
-        append: yes
+  roles:
+    - setup

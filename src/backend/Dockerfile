@@ -22,9 +22,13 @@ COPY src/backend/ /app/
 # /app/seed-data/ is NOT mounted, so this file persists inside the image
 COPY data/telecom_sops_500_stress_test.json /app/seed-data/telecom_sops_500_stress_test.json
 
+# Accept HuggingFace token for authenticated model downloads (avoids rate limits)
+ARG HF_TOKEN=""
+
 # PRE-DOWNLOAD MODELS: Bake the models directly into the Docker image during the build.
-RUN python -c "from gliner import GLiNER; GLiNER.from_pretrained('urchade/gliner_medium-v2.1')"
-RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('BAAI/bge-base-en-v1.5'); SentenceTransformer('cross-encoder/ms-marco-MiniLM-L-6-v2')"
+# Token is used inline to avoid persisting in image layers.
+RUN HUGGING_FACE_HUB_TOKEN=${HF_TOKEN} python -c "from gliner import GLiNER; GLiNER.from_pretrained('urchade/gliner_medium-v2.1')"
+RUN HUGGING_FACE_HUB_TOKEN=${HF_TOKEN} python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('BAAI/bge-base-en-v1.5'); SentenceTransformer('cross-encoder/ms-marco-MiniLM-L-6-v2')"
 
 # Make entrypoint executable
 RUN chmod +x /app/entrypoint.sh

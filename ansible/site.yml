@@ -1,0 +1,19 @@
+---
+# SecureNOC — Full Infrastructure Pipeline
+# Runs: Host Setup → Kubernetes → ELK → Monitoring
+# Usage: ansible-playbook site.yml
+
+- name: SecureNOC Full Infrastructure Pipeline
+  hosts: localhost
+  connection: local
+  become: yes
+  vars:
+    k8s_dir: "{{ playbook_dir }}/../k8s"
+    app_namespace: securenoc
+    insecure_flag: "--insecure-skip-tls-verify=true"
+    rollout_timeout: "300s"
+  roles:
+    - setup
+    - k8s
+    - elk
+    - monitoring

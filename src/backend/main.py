@@ -125,7 +125,7 @@ except Exception as e:
         "Failed to retrieve API key from Vault",
         extra={"error": str(e), "hint": "Did you inject the secret into Vault?"},
     )
-    GROQ_API_KEY = "missing_key"
+    raise SystemExit("FATAL: Cannot start without Groq API key. Check Vault configuration.")
 
 
 # ---------------------------------------------------------------------------

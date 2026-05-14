@@ -1,0 +1,41 @@
+---
+# Role: monitoring — Deploy Grafana and verify all pod health
+
+- name: Apply monitoring manifests
+  shell: kubectl apply -f {{ k8s_dir }}/monitoring.yml {{ insecure_flag }}
+
+- name: Verify all pods in securenoc namespace
+  shell: kubectl get pods -n {{ app_namespace }} {{ insecure_flag }}
+  register: securenoc_pods
+  changed_when: false
+
+- name: Display securenoc pods
+  debug:
+    var: securenoc_pods.stdout_lines
+
+- name: Verify all pods in logging namespace
+  shell: kubectl get pods -n logging {{ insecure_flag }}
+  register: logging_pods
+  changed_when: false
+
+- name: Display logging pods
+  debug:
+    var: logging_pods.stdout_lines
+
+- name: Verify all pods in monitoring namespace
+  shell: kubectl get pods -n monitoring {{ insecure_flag }}
+  register: monitoring_pods
+  changed_when: false
+
+- name: Display monitoring pods
+  debug:
+    var: monitoring_pods.stdout_lines
+
+- name: Display all services across namespaces
+  shell: kubectl get svc --all-namespaces {{ insecure_flag }}
+  register: all_services
+  changed_when: false
+
+- name: Show services summary
+  debug:
+    var: all_services.stdout_lines

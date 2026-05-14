@@ -2,9 +2,9 @@ pipeline {
     agent any
     
     environment {
-        // Change "sameer123" to your actual lowercase Docker Hub username!
         DOCKER_IMAGE_BACKEND = "mdharis285046/mlops-backend"
         DOCKER_IMAGE_FRONTEND = "mdharis285046/mlops-frontend"
+        HF_TOKEN = credentials('hugging-face-token')
     }
 
     stages {
@@ -17,12 +17,10 @@ pipeline {
         stage('Build Docker Images') {
             steps {
                 echo "🔨 Building Backend Docker Image..."
-                sh "docker build -t ${DOCKER_IMAGE_BACKEND}:latest -f src/backend/Dockerfile ."
+                sh "docker build --build-arg HF_TOKEN=${HF_TOKEN} -t ${DOCKER_IMAGE_BACKEND}:latest -f src/backend/Dockerfile ."
                 
                 echo "🎨 Building Frontend Docker Image..."
                 sh "docker build -t ${DOCKER_IMAGE_FRONTEND}:latest ./src/frontend"
-
-
             }
         }
         
@@ -55,41 +53,40 @@ pipeline {
 
                     sh "docker tag ${DOCKER_IMAGE_FRONTEND}:latest ${DOCKER_IMAGE_FRONTEND}:${env.BUILD_NUMBER}"
                     sh "docker push ${DOCKER_IMAGE_FRONTEND}:${env.BUILD_NUMBER}"
-
                 }
             }
         }
         
-        stage('Deploy to Kubernetes') {
+        stage('Deploy via Ansible') {
             steps {
-                echo "📥 Downloading kubectl tool..."
-                sh '''
-                    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-                    chmod +x ./kubectl
-                '''
-                
-                echo "🔌 Patching Kubeconfig for Docker-to-Host networking..."
-                sh '''
-                    cp /home/haris/.kube/config ./jenkins-kubeconfig
-                    sed -i 's/0.0.0.0/172.17.0.1/g' ./jenkins-kubeconfig
-                    sed -i 's/127.0.0.1/172.17.0.1/g' ./jenkins-kubeconfig
-                '''
+                echo "🤖 Deploying to Kubernetes via Ansible..."
+                withCredentials([file(credentialsId: 'kubeconfig-cred', variable: 'KUBECONFIG_FILE')]) {
+                    sh '''
+                        # Patch kubeconfig for Docker-to-Host networking
+                        cp ${KUBECONFIG_FILE} ./jenkins-kubeconfig
+                        sed -i 's/0.0.0.0/172.17.0.1/g' ./jenkins-kubeconfig
+                        sed -i 's/127.0.0.1/172.17.0.1/g' ./jenkins-kubeconfig
+                        export KUBECONFIG=$(pwd)/jenkins-kubeconfig
 
-                echo "🚀 Applying Kubernetes Manifests & Rolling Out..."
-                sh '''
-                    export KUBECONFIG=./jenkins-kubeconfig
-                    
-                    # Create namespaces first (must exist before namespaced resources)
-                    ./kubectl apply -f k8s/namespaces.yml --insecure-skip-tls-verify=true
-                    
-                    # Apply all YAML files in the k8s directory
-                    ./kubectl apply -f k8s/ --insecure-skip-tls-verify=true
-                    
-                    # Force Kubernetes to pull the new images and restart the pods
-                    ./kubectl rollout restart deployment backend -n securenoc --insecure-skip-tls-verify=true
-                    ./kubectl rollout restart deployment frontend -n securenoc --insecure-skip-tls-verify=true
-                '''
+                        # Deploy via Ansible playbook
+                        ansible-playbook ansible/deploy.yml -v
+                    '''
+                }
             }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Pipeline completed successfully! All stages passed."
+        }
+        failure {
+            echo "❌ Pipeline failed! Check the logs above for details."
+        }
+        always {
+            echo "🧹 Cleaning up workspace..."
+            sh 'docker logout || true'
+            cleanWs()
         }
     }
 }

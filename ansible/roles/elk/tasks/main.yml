@@ -1,0 +1,24 @@
+---
+# Role: elk — Deploy ELK Stack and verify health
+
+- name: Apply ELK Stack manifests
+  shell: kubectl apply -f {{ k8s_dir }}/elk.yml {{ insecure_flag }}
+
+- name: Wait for Elasticsearch pod to be ready
+  shell: >
+    kubectl get pods -n logging -l app=elasticsearch
+    -o jsonpath='{.items[0].status.phase}' {{ insecure_flag }}
+  register: es_status
+  retries: 10
+  delay: 15
+  until: es_status.stdout == "Running"
+  ignore_errors: true
+
+- name: Display ELK pod status
+  shell: kubectl get pods -n logging {{ insecure_flag }}
+  register: elk_pods
+  changed_when: false
+
+- name: Show ELK pods
+  debug:
+    var: elk_pods.stdout_lines
