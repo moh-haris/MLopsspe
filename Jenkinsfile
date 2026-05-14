@@ -57,6 +57,17 @@ pipeline {
             }
         }
         
+        stage('Sideload Images to K3s') {
+            steps {
+                echo "🚀 Sideloading images directly from Docker to K3s cache (bypassing internet download)..."
+                sh '''
+                    # Save from Docker and import directly into K3s containerd
+                    docker save ${DOCKER_IMAGE_BACKEND}:latest | sudo k3s ctr images import -
+                    docker save ${DOCKER_IMAGE_FRONTEND}:latest | sudo k3s ctr images import -
+                '''
+            }
+        }
+        
         stage('Deploy via Ansible') {
             steps {
                 echo "🤖 Deploying to Kubernetes via Ansible..."
