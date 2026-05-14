@@ -60,7 +60,10 @@ pipeline {
         stage('Deploy via Ansible') {
             steps {
                 echo "🤖 Deploying to Kubernetes via Ansible..."
-                withCredentials([file(credentialsId: 'kubeconfig-cred', variable: 'KUBECONFIG_FILE')]) {
+                withCredentials([
+                    file(credentialsId: 'kubeconfig-cred', variable: 'KUBECONFIG_FILE'),
+                    string(credentialsId: 'groq-api-key', variable: 'GROQ_API_KEY')
+                ]) {
                     sh '''
                         # Patch kubeconfig for Docker-to-Host networking
                         cp ${KUBECONFIG_FILE} ./jenkins-kubeconfig
@@ -68,7 +71,8 @@ pipeline {
                         sed -i 's/127.0.0.1/172.17.0.1/g' ./jenkins-kubeconfig
                         export KUBECONFIG=$(pwd)/jenkins-kubeconfig
 
-                        # Deploy via Ansible playbook
+                        # Deploy via Ansible playbook (auto-seeds Vault)
+                        export GROQ_API_KEY=${GROQ_API_KEY}
                         ansible-playbook ansible/deploy.yml -v
                     '''
                 }
