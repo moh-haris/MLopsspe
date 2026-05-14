@@ -17,8 +17,19 @@
 - name: Create Kubernetes namespaces
   shell: kubectl apply -f {{ k8s_dir }}/namespaces.yml {{ insecure_flag }}
 
-- name: Apply Kubernetes secrets
-  shell: kubectl apply -f {{ k8s_dir }}/secrets.yml {{ insecure_flag }}
+- name: Create vault-credentials secret (idempotent)
+  shell: >
+    kubectl create secret generic vault-credentials
+    --namespace {{ app_namespace }}
+    --from-literal=vault-token=securenoc-root-token
+    --dry-run=client -o yaml | kubectl apply {{ insecure_flag }} -f -
+
+- name: Create app-credentials secret (idempotent)
+  shell: >
+    kubectl create secret generic app-credentials
+    --namespace {{ app_namespace }}
+    --from-literal=hf-token={{ lookup('env', 'HF_TOKEN') | default('not-set', true) }}
+    --dry-run=client -o yaml | kubectl apply {{ insecure_flag }} -f -
 
 - name: Apply all Kubernetes manifests
   shell: kubectl apply -f {{ k8s_dir }}/ {{ insecure_flag }}

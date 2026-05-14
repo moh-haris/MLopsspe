@@ -35,5 +35,4 @@ SecureNOC_Project_Report.md
 SPE_Project.pdf
 
 # Secrets & Credentials (NEVER commit)
-k8s/secrets.yml
 jenkins-kubeconfig
