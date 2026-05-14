@@ -109,23 +109,28 @@ CHROMA_PATH = os.path.join(DATA_DIR, "chroma_db")
 
 # ---------------------------------------------------------------------------
 # Vault Integration — structured logging (no secrets logged)
+# Allow GROQ_API_KEY env var as direct override (used during CI/CD testing)
 # ---------------------------------------------------------------------------
-logger.info("Connecting to HashiCorp Vault", extra={"vault_addr": os.getenv("VAULT_ADDR", "http://vault:8200")})
-try:
-    vault_client = hvac.Client(
-        url=os.getenv("VAULT_ADDR", "http://vault-service:8200"),
-        token=os.getenv("VAULT_TOKEN"),
-    )
-    # Read the secret injected into Vault
-    secret_response = vault_client.secrets.kv.v2.read_secret_version(path="llm-credentials")
-    GROQ_API_KEY = secret_response["data"]["data"]["groq_key"]
-    logger.info("API key retrieved securely from Vault", extra={"secret_path": "llm-credentials"})
-except Exception as e:
-    logger.critical(
-        "Failed to retrieve API key from Vault",
-        extra={"error": str(e), "hint": "Did you inject the secret into Vault?"},
-    )
-    raise SystemExit("FATAL: Cannot start without Groq API key. Check Vault configuration.")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+
+if GROQ_API_KEY:
+    logger.info("API key loaded from environment variable (CI/testing mode)")
+else:
+    logger.info("Connecting to HashiCorp Vault", extra={"vault_addr": os.getenv("VAULT_ADDR", "http://vault:8200")})
+    try:
+        vault_client = hvac.Client(
+            url=os.getenv("VAULT_ADDR", "http://vault-service:8200"),
+            token=os.getenv("VAULT_TOKEN"),
+        )
+        secret_response = vault_client.secrets.kv.v2.read_secret_version(path="llm-credentials")
+        GROQ_API_KEY = secret_response["data"]["data"]["groq_key"]
+        logger.info("API key retrieved securely from Vault", extra={"secret_path": "llm-credentials"})
+    except Exception as e:
+        logger.critical(
+            "Failed to retrieve API key from Vault",
+            extra={"error": str(e), "hint": "Did you inject the secret into Vault?"},
+        )
+        raise SystemExit("FATAL: Cannot start without Groq API key. Check Vault configuration.")
 
 
 # ---------------------------------------------------------------------------

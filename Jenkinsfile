@@ -28,7 +28,7 @@ pipeline {
             steps {
                 echo "🧪 Running Pytest INSIDE the built backend image..."
                 sh '''
-                    docker run --rm ${DOCKER_IMAGE_BACKEND}:latest /bin/sh -c "
+                    docker run --rm -e GROQ_API_KEY=test-key --entrypoint "" ${DOCKER_IMAGE_BACKEND}:latest /bin/sh -c "
                         pip install pytest httpx && 
                         pytest tests/
                     "
