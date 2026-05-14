@@ -49,7 +49,7 @@
 - name: Seed Vault with LLM credentials
   shell: >
     kubectl exec deployment/vault -n {{ app_namespace }} {{ insecure_flag }}
-    -- vault kv put secret/llm-credentials
+    -- env VAULT_ADDR=http://127.0.0.1:8200 vault kv put secret/llm-credentials
     groq_key={{ lookup('env', 'GROQ_API_KEY') }}
     hf_token={{ lookup('env', 'HF_TOKEN') | default('not-set', true) }}
   when: lookup('env', 'GROQ_API_KEY') | length > 0
