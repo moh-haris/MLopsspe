@@ -34,6 +34,28 @@
 - name: Apply all Kubernetes manifests
   shell: kubectl apply -f {{ k8s_dir }}/ {{ insecure_flag }}
 
+# --- Wait for Vault to be ready BEFORE restarting backend ---
+
+- name: Wait for Vault pod to be ready
+  shell: >
+    kubectl wait --for=condition=ready pod -l app=vault
+    -n {{ app_namespace }} --timeout=120s {{ insecure_flag }}
+  register: vault_ready
+
+- name: Display Vault readiness
+  debug:
+    var: vault_ready.stdout_lines
+
+- name: Seed Vault with LLM credentials
+  shell: >
+    kubectl exec deployment/vault -n {{ app_namespace }} {{ insecure_flag }}
+    -- vault kv put secret/llm-credentials
+    groq_key={{ lookup('env', 'GROQ_API_KEY') }}
+    hf_token={{ lookup('env', 'HF_TOKEN') | default('not-set', true) }}
+  when: lookup('env', 'GROQ_API_KEY') | length > 0
+
+# --- Now restart deployments so backend picks up seeded Vault ---
+
 - name: Rollout restart backend deployment
   shell: kubectl rollout restart deployment backend -n {{ app_namespace }} {{ insecure_flag }}
 
