@@ -113,7 +113,7 @@ pipeline {
             )
         }
         always {
-            echo "Cleaning up workspace..."
+            echo "Cleaning up workspace"
             sh 'docker logout || true'
             cleanWs()
         }
