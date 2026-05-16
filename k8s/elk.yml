@@ -91,6 +91,7 @@ spec:
       labels:
         app: filebeat
     spec:
+      serviceAccountName: filebeat
       containers:
       - name: filebeat
         image: docker.elastic.co/beats/filebeat:7.17.18
@@ -102,6 +103,10 @@ spec:
           "-e",
         ]
         env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
         - name: ELASTICSEARCH_HOST
           value: "elasticsearch:9200"
         volumeMounts:
@@ -132,7 +137,36 @@ spec:
           path: /var/lib/filebeat-data
           type: DirectoryOrCreate
 ---
-# Filebeat ConfigMap (Instructs it to parse JSON and send to ES)
+# Filebeat RBAC Permissions
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: filebeat
+  namespace: logging
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: filebeat
+rules:
+- apiGroups: [""]
+  resources: ["namespaces", "pods", "nodes"]
+  verbs: ["get", "watch", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: filebeat
+subjects:
+- kind: ServiceAccount
+  name: filebeat
+  namespace: logging
+roleRef:
+  kind: ClusterRole
+  name: filebeat
+  apiGroup: rbac.authorization.k8s.io
+---
+# Filebeat ConfigMap
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -145,6 +179,11 @@ data:
       paths:
         - /var/log/containers/*.log
       processors:
+        - add_kubernetes_metadata:
+            host: ${NODE_NAME}
+            matchers:
+            - logs_path:
+                logs_path: "/var/log/containers/"
         - decode_json_fields:
             fields: ["message"]
             target: "json"
